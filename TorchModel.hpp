@@ -41,24 +41,44 @@ class Net : public torch::nn::Module
         auto n_outliers = 0;
         const auto n_data = y_vals.size(0);
 
-        auto loss = std::ranges::fold_left(std::views::zip_transform(
-                                               [&](const torch::Tensor& y_val, const torch::Tensor& y_pred)
-                                               {
-                                                   auto residual = torch::abs(y_val - y_pred);
-                                                   if ((residual > epsilon_ * torch::abs(sigma_)).item<bool>())
-                                                   {
-                                                       ++n_outliers;
-                                                       return residual * 2.0 * epsilon_;
-                                                   }
-                                                   return residual * residual / torch::abs(sigma_);
-                                               },
-                                               y_vals.unbind(),
-                                               y_preds.unbind()),
-                                           0.0001 * weight_ * weight_,
-                                           std::plus{});
-        loss += n_data * torch::abs(sigma_);
-        loss -= n_outliers * torch::abs(sigma_) * epsilon_ * epsilon_;
-        return loss;
+        loss_ = 0.0001 * weight_ * weight_;
+
+        y_val_unbind_ = y_vals.unbind();
+        y_pred_unbind_ = y_preds.unbind();
+        sigma_abs_ = torch::abs(sigma_);
+
+        for (const auto& [y_val, y_pred] : std::views::zip(y_val_unbind_, y_pred_unbind_))
+        {
+            residual_ = torch::abs(y_val - y_pred);
+            if ((residual_ > epsilon_ * sigma_abs_).item<bool>())
+            {
+                ++n_outliers;
+                loss_ += residual_ * 2.0 * epsilon_;
+            }
+            else
+            {
+                loss_ += residual_ * residual_ / sigma_abs_;
+            }
+        }
+
+        // loss_ = std::ranges::fold_left(std::views::zip_transform(
+        //                                    [&](const torch::Tensor& y_val, const torch::Tensor& y_pred)
+        //                                    {
+        //                                        auto residual = torch::abs(y_val - y_pred);
+        //                                        if ((residual > epsilon_ * torch::abs(sigma_)).item<bool>())
+        //                                        {
+        //                                            ++n_outliers;
+        //                                            return residual * 2.0 * epsilon_;
+        //                                        }
+        //                                        return residual * residual / torch::abs(sigma_);
+        //                                    },
+        //                                    y_vals.unbind(),
+        //                                    y_preds.unbind()),
+        //                                0.0001 * weight_ * weight_,
+        //                                std::plus{});
+        loss_ += n_data * sigma_abs_;
+        loss_ -= n_outliers * sigma_abs_ * epsilon_ * epsilon_;
+        return loss_;
     }
 
     auto train_from_data(const torch::Tensor& x_vals, const torch::Tensor& y_vals) -> int
@@ -68,14 +88,14 @@ class Net : public torch::nn::Module
         auto loss_fun = [&]()
         {
             optimizer_.zero_grad();
-            auto predict = forward(x_vals);
-            auto loss = calculate_loss(y_vals, predict);
+            predict_ = forward(x_vals);
+            auto loss = calculate_loss(y_vals, predict_);
             loss.backward({}, true);
             ++n_iter;
             return loss;
         };
 
-        auto loss_val = optimizer_.step(loss_fun);
+        optimizer_out_ = optimizer_.step(loss_fun);
         n_iter_ = n_iter;
         return n_iter;
     }
@@ -147,4 +167,12 @@ class Net : public torch::nn::Module
     torch::Tensor sigma_;
     torch::optim::LBFGS optimizer_;
     std::unique_ptr<torch::optim::Adam> adam_optimizer_;
+
+    torch::Tensor loss_;
+    torch::Tensor predict_;
+    torch::Tensor residual_;
+    torch::Tensor optimizer_out_;
+    std::vector<torch::Tensor> y_val_unbind_;
+    torch::Tensor sigma_abs_;
+    std::vector<torch::Tensor> y_pred_unbind_;
 };

@@ -58,14 +58,16 @@ namespace
 } // namespace
 
 // BENCHMARK(benchmark_function)->Name("testing");
-BENCHMARK(TorchBM)->Threads(1)->Iterations(20)->Name("Using libtorch")->Unit(benchmark::kMillisecond);
-BENCHMARK(TorchAdam)->Threads(1)->Iterations(20)->Name("Using adam")->Unit(benchmark::kMillisecond);
-BENCHMARK(RootBM)->Threads(1)->Iterations(20)->Name("Using ROOT")->Unit(benchmark::kMillisecond);
+BENCHMARK(TorchBM)->Threads(1)->Iterations(4000)->Name("Using BFGS")->Unit(benchmark::kMillisecond);
+// BENCHMARK(TorchAdam)->Threads(1)->Iterations(4000)->Name("Using adam")->Unit(benchmark::kMillisecond);
+BENCHMARK(RootBM)->Threads(1)->Iterations(4000)->Name("Using ROOT")->Unit(benchmark::kMillisecond);
 
 // BENCHMARK_MAIN();
 
 auto main(int argc, char** argv) -> int
 {
+    at::set_num_threads(10);
+    at::set_num_interop_threads(10);
     benchmark::MaybeReenterWithoutASLR(argc, argv);
     // auto mm = make_unique<benchmark::MemoryManager>();
     // benchmark::RegisterMemoryManager();

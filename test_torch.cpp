@@ -2,6 +2,8 @@
 
 auto main() -> int
 {
+    at::set_num_threads(1);
+    at::set_num_interop_threads(1);
     auto x_vals = std::to_array<float>({ 127.5, 117.5, 107.5, 97.5, 87.5, 77.5, 67.5, 7.5, 17.5, 27.5, 37.5, 47.5, 57.5 });
     auto y_vals = std::to_array<float>({-117.5, -117.5, -117.5, -117.5, -117.5, -117.5, -117.5, -122.5, -122.5, -122.5, -122.5, -117.5, -117.5});
 
