@@ -2,13 +2,18 @@
 
 #include <format>
 #include <print>
+#include <range/v3/view.hpp>
 #include <sstream>
 #include <torch/torch.h>
 
+namespace sv = ranges::views;
 template <>
 struct std::formatter<torch::Tensor>
 {
-    static constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
+    static constexpr auto parse(std::format_parse_context& ctx)
+    {
+        return ctx.begin();
+    }
 
     static auto format(const torch::Tensor& tensor, std::format_context& ctx)
     {
@@ -34,23 +39,28 @@ class Net : public torch::nn::Module
         adam_optimizer_ = std::make_unique<torch::optim::Adam>(std::vector{ offset_group, other_group },
                                                                torch::optim::AdamOptions{}.lr(0.1));
     }
-    auto forward(const torch::Tensor& val) -> torch::Tensor { return weight_ * val + bias_; }
 
-    auto calculate_loss(const torch::Tensor& y_vals, const torch::Tensor& y_preds)
+    auto forward(const torch::Tensor& val) -> torch::Tensor
     {
-        auto n_outliers = 0;
-        const auto n_data = y_vals.size(0);
+        return weight_ * val + bias_;
+    }
 
+    void part_one(const torch::Tensor& y_vals, const torch::Tensor& y_preds)
+    {
         loss_ = 0.0001 * weight_ * weight_;
 
         y_val_unbind_ = y_vals.unbind();
         y_pred_unbind_ = y_preds.unbind();
         sigma_abs_ = torch::abs(sigma_);
+    }
 
-        for (const auto& [y_val, y_pred] : std::views::zip(y_val_unbind_, y_pred_unbind_))
+    void part_two(int& n_outliers)
+    {
+        epsilon_sigma_ = epsilon_ * sigma_abs_;
+        for (const auto& [y_val, y_pred] : sv::zip(y_val_unbind_, y_pred_unbind_))
         {
             residual_ = torch::abs(y_val - y_pred);
-            if ((residual_ > epsilon_ * sigma_abs_).item<bool>())
+            if ((residual_ > epsilon_sigma_).item<bool>())
             {
                 ++n_outliers;
                 loss_ += residual_ * 2.0 * epsilon_;
@@ -60,6 +70,22 @@ class Net : public torch::nn::Module
                 loss_ += residual_ * residual_ / sigma_abs_;
             }
         }
+    }
+
+    void part_three(int n_data, int n_outliers)
+    {
+        loss_ += sigma_abs_ * n_data;
+        loss_ -= n_outliers * sigma_abs_ * epsilon_ * epsilon_;
+    }
+
+    auto calculate_loss(const torch::Tensor& y_vals, const torch::Tensor& y_preds)
+    {
+        auto n_outliers = 0;
+        const auto n_data = static_cast<int>(y_vals.size(0));
+
+        part_one(y_vals, y_preds);
+        part_two(n_outliers);
+        part_three(n_data, n_outliers);
 
         // loss_ = std::ranges::fold_left(std::views::zip_transform(
         //                                    [&](const torch::Tensor& y_val, const torch::Tensor& y_pred)
@@ -76,8 +102,6 @@ class Net : public torch::nn::Module
         //                                    y_preds.unbind()),
         //                                0.0001 * weight_ * weight_,
         //                                std::plus{});
-        loss_ += n_data * sigma_abs_;
-        loss_ -= n_outliers * sigma_abs_ * epsilon_ * epsilon_;
         return loss_;
     }
 
@@ -107,7 +131,7 @@ class Net : public torch::nn::Module
         auto max_grad = 1.F;
         const auto max_iter = 500;
 
-        for (auto idx : std::views::iota(0, 500))
+        for (auto idx : sv::iota(0, 500))
         {
             adam_optimizer_->zero_grad();
             auto predict = forward(x_vals);
@@ -168,6 +192,7 @@ class Net : public torch::nn::Module
     torch::optim::LBFGS optimizer_;
     std::unique_ptr<torch::optim::Adam> adam_optimizer_;
 
+    torch::Tensor epsilon_sigma_;
     torch::Tensor loss_;
     torch::Tensor predict_;
     torch::Tensor residual_;

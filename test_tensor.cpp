@@ -3,7 +3,7 @@
 
 #include <algorithm>
 #include <array>
-#include <malloc.h>
+// #include <malloc.h>
 #include <map>
 #include <print>
 #include <vector>
@@ -17,25 +17,25 @@
 //     std::println("arena: {}, ordbls: {}, uordblks: {}", info.arena, info.ordblks, info.uordblks);
 // }
 
-class MallocInfo
-{
-  public:
-    MallocInfo()
-    {
-        first_info_ = mallinfo2();
-        // print_info(first_info_);
-    }
-    ~MallocInfo()
-    {
-        auto last_info = mallinfo2();
-        // print_info(last_info);
-        std::println("allocation difference: {}", last_info.uordblks - first_info_.uordblks);
-    }
+// class MallocInfo
+// {
+//   public:
+//     MallocInfo()
+//     {
+//         first_info_ = mallinfo2();
+//         // print_info(first_info_);
+//     }
+//     ~MallocInfo()
+//     {
+//         auto last_info = mallinfo2();
+//         // print_info(last_info);
+//         std::println("allocation difference: {}", last_info.uordblks - first_info_.uordblks);
+//     }
 
-  private:
-    using mallinfo_struct = struct mallinfo2;
-    mallinfo_struct first_info_{};
-};
+//   private:
+//     using mallinfo_struct = struct mallinfo2;
+//     mallinfo_struct first_info_{};
+// };
 
 // auto run_tensor()
 // {

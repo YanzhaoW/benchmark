@@ -1,4 +1,4 @@
-#include "RootModel.hpp"
+// #include "RootModel.hpp"
 #include "TorchModel.hpp"
 #include <benchmark/benchmark.h>
 #include <torch/torch.h>
@@ -41,26 +41,26 @@ namespace
         model.print();
     }
 
-    void RootBM(benchmark::State& state)
-    {
-        auto root_model = RootModel(1.35);
-        std::vector<double> x_vals{ 47.5, 47.5, 57.5, 67.5, 67.5 };
-        std::vector<double> y_vals{ -127.5, 117.5, 112.5, 107.5, 102.5 };
+    // void RootBM(benchmark::State& state)
+    // {
+    //     auto root_model = RootModel(1.35);
+    //     std::vector<double> x_vals{ 47.5, 47.5, 57.5, 67.5, 67.5 };
+    //     std::vector<double> y_vals{ -127.5, 117.5, 112.5, 107.5, 102.5 };
 
-        for (auto idx : state)
-        {
-            root_model.clear();
-            root_model.train_from_data(x_vals, y_vals);
-        }
-        root_model.print();
-    }
+    //     for (auto idx : state)
+    //     {
+    //         root_model.clear();
+    //         root_model.train_from_data(x_vals, y_vals);
+    //     }
+    //     root_model.print();
+    // }
 
 } // namespace
 
 // BENCHMARK(benchmark_function)->Name("testing");
 BENCHMARK(TorchBM)->Threads(1)->Iterations(4000)->Name("Using BFGS")->Unit(benchmark::kMillisecond);
 // BENCHMARK(TorchAdam)->Threads(1)->Iterations(4000)->Name("Using adam")->Unit(benchmark::kMillisecond);
-BENCHMARK(RootBM)->Threads(1)->Iterations(4000)->Name("Using ROOT")->Unit(benchmark::kMillisecond);
+// BENCHMARK(RootBM)->Threads(1)->Iterations(4000)->Name("Using ROOT")->Unit(benchmark::kMillisecond);
 
 // BENCHMARK_MAIN();
 

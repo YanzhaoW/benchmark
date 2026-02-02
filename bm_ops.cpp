@@ -1,9 +1,11 @@
 #include <benchmark/benchmark.h>
 #include <print>
+#include <range/v3/view.hpp>
 #include <torch/torch.h>
 
 namespace
 {
+    namespace sv = ranges::views;
     void TorchBM(benchmark::State& state)
     {
         auto x_vals = std::to_array<float>({ 67.5, 67.5, 47.5, 47.5, 57.5 });
@@ -44,9 +46,7 @@ namespace
         for (auto idx : state)
         {
             sum += std::ranges::fold_left(
-                std::views::zip_transform([](auto val1, auto val2) { return val1 + val2; }, x_vals, y_vals),
-                0.F,
-                std::plus{});
+                sv::zip_with([](auto val1, auto val2) { return val1 + val2; }, x_vals, y_vals), 0.F, std::plus{});
         }
         std::println("sum: {}", sum);
     }

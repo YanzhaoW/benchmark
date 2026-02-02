@@ -2,7 +2,7 @@
 
 #include <Math/Factory.h>
 #include <Math/Functor.h>
-#include <Math/GSLMinimizer.h>
+// #include <Math/GSLMinimizer.h>
 #include <Math/Minimizer.h>
 #include <Math/ProbFunc.h>
 #include <Minuit2/Minuit2Minimizer.h>
