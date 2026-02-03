@@ -9,6 +9,7 @@ class CompressorRecipe(ConanFile):
 
     def requirements(self):
         self.requires("gsl-lite/1.0.1")
+        self.requires("eigen/5.0.1")
         self.requires("benchmark/1.9.4")
 
     def layout(self):
