@@ -8,6 +8,7 @@ class CompressorRecipe(ConanFile):
 
     def requirements(self):
         self.requires("benchmark/1.9.4")
+        self.requires("eigen/5.0.1")
 
     # def layout(self):
     #     cmake_layout(self, build_folder="build")
