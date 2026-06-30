@@ -6,22 +6,16 @@
 #include <random>
 #include <ranges>
 
-#include <stdlib.h>
-
-int numOfHeapAllocations = 0;
-
-auto operator new(size_t size) -> void*
-{
-    numOfHeapAllocations++;
-    return malloc(size);
-}
-
 namespace
 {
-    constexpr auto n_rows_max = 8;
-    constexpr auto n_rows_min = 1;
-    constexpr auto n_cols_max = 50;
-    constexpr auto n_cols_min = 3;
+    constexpr auto n_rows_max = 200;
+    constexpr auto n_rows_min = 30;
+    constexpr auto n_cols_max = 200;
+    constexpr auto n_cols_min = 30;
+    // constexpr auto n_rows_max = 80;
+    // constexpr auto n_rows_min = 10;
+    // constexpr auto n_cols_max = 50;
+    // constexpr auto n_cols_min = 3;
     constexpr auto enable_hist = false;
 
     void dense_randomize(auto& matrix, std::mt19937& engine)
@@ -50,7 +44,7 @@ namespace
                            std::views::transform([](auto num) { return std::pair{ num, 0U }; }) |
                            std::ranges::to<std::unordered_map>();
         auto sum = 0.F;
-        numOfHeapAllocations = 0;
+        Eigen::internal::set_is_malloc_allowed(true);
         for (auto idx : state)
         {
             const auto n_row = row_dist(engine);
@@ -64,12 +58,12 @@ namespace
             dense_randomize(matrix, engine);
             sum += matrix.sum() / (n_row * n_col);
         }
+        Eigen::internal::set_is_malloc_allowed(true);
         if constexpr (enable_hist)
         {
             std::println("row hist: {}", hist_n_rows);
             std::println("col hist: {}", hist_n_rows);
         }
-        std::println("memory allocation: {}", numOfHeapAllocations);
     }
 
     void TestConResize(benchmark::State& state)
@@ -128,7 +122,7 @@ namespace
                            std::ranges::to<std::unordered_map>();
 
         auto sum = 0.F;
-        numOfHeapAllocations = 0;
+        Eigen::internal::set_is_malloc_allowed(false);
         for (auto idx : state)
         {
             const auto n_row = row_dist(engine);
@@ -144,12 +138,12 @@ namespace
             dense_randomize(matrix, engine);
             sum += matrix.sum() / (n_row * n_col);
         }
+        Eigen::internal::set_is_malloc_allowed(true);
         if constexpr (enable_hist)
         {
             std::println("row hist: {}", hist_n_rows);
             std::println("col hist: {}", hist_n_rows);
         }
-        std::println("memory allocation: {}", numOfHeapAllocations);
     }
 
 } // namespace
